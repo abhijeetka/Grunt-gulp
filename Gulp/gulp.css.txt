@@ -1,0 +1,10 @@
+module.exports = function() {
+    var css = {
+
+        //all .js that is to be read
+        all: [
+    './coverage/**/*.css',
+    './*.css']
+    };
+    return css;
+};

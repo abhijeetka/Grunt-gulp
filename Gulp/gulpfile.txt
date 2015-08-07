@@ -1,0 +1,84 @@
+var gulp = require('gulp');
+var phpcs = require('gulp-phpcs');
+var phpunit = require('gulp-phpunit');
+var sonar = require('gulp-sonar');
+
+var args = require('yargs').argv;
+var config = require('./gulp.config')();
+var config1 = require('./gulp.config-php')();
+var config2 = require('./gulp.css')();
+var $ = require('gulp-load-plugins')({lazy:true});
+
+
+//PHP CodeSniffer
+gulp.task('checkstyle', function () {
+    //return gulp.src(['./src/**/*.php'])
+      return gulp.src(config1.all)
+
+        .pipe(phpcs({bin: 'vendor/bin/phpcs', standard: 'PSR2', warningSeverity: 0}))
+        .pipe(phpcs.reporter('log'));
+});
+
+
+//PHPUnit-phpunit.xml
+gulp.task('phpunit', function() {
+    gulp.src('phpunit.xml')
+      .pipe(phpunit('', {notify: true}));
+  });
+
+
+//gulp-sonar
+gulp.task('sonar', function () {
+    var options = {
+        sonar: {
+            host: {
+                url: 'http://172.27.59.62:9080'
+            },
+            jdbc: {
+                url: 'jdbc:mysql://172.27.59.62:3306/sonar',
+                username: 'sonar',
+                password: 'sonar'
+            },
+            projectKey: 'sonar:gulp-sonar-runner:1.0.0',
+            projectName: 'Pallavi-gulp',
+            projectVersion: '1.0.0',
+            // comma-delimited string of source directories 
+            sources: 'src',
+            language: 'php',
+            sourceEncoding: 'UTF-8',
+            javascript: {
+                lcov: {
+                    reportPath: './sonar_report/lcov.info'
+                }
+            }
+        }
+    };
+ 
+    // gulp source doesn't matter, all files are referenced in options object above 
+    return gulp.src(['./src/**/*.php'])
+       .pipe(sonar(options))
+       .on('error', util.log);
+});
+
+//jshint & jscs
+
+gulp.task('jshint', function() {
+    //log('Analyzing source with JSHint & JSCS');
+
+    return gulp.src(config.all)
+           .pipe($.if(args.verbose, $.print()))
+           .pipe($.jshint())
+           .pipe($.jshint.reporter('jshint-stylish', {verbose:true}))
+           .pipe($.jshint.reporter('fail'));
+});
+
+
+gulp.task('css', function() {
+  return gulp.src(config2.all)
+    .pipe($.csslint())
+    .pipe($.csslint.reporter());
+});
+
+
+gulp.task( 'default',['checkstyle', 'phpunit', 'jshint','css','sonar']);
+
